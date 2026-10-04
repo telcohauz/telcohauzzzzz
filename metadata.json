@@ -1,0 +1,6 @@
+{
+  "name": "TELCOHAUZ Digital Audit & Knowledge Hub",
+  "description": "Evidence-based database and digital audit platform for collecting, organizing, cross-checking, and verifying TELCOHAUZ digital presence and records.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
