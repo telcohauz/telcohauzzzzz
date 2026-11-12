@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { CheckSquare2, Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, User } from 'lucide-react';
 import { AuditTask, AuditTaskStatus, TaskPriority } from '../types/index.ts';
@@ -34,7 +35,7 @@ export const AuditTasksView: React.FC<Props> = ({ onRefreshStats }) => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tasks');
+      const res = await auditFetch('/api/tasks');
       if (res.ok) {
         setTasksList(await res.json());
       }
@@ -50,7 +51,7 @@ export const AuditTasksView: React.FC<Props> = ({ onRefreshStats }) => {
     if (!taskTitle.trim()) return;
 
     try {
-      const res = await fetch('/api/tasks', {
+      const res = await auditFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,7 +82,7 @@ export const AuditTasksView: React.FC<Props> = ({ onRefreshStats }) => {
     if (!selectedTask) return;
 
     try {
-      const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+      const res = await auditFetch(`/api/tasks/${selectedTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

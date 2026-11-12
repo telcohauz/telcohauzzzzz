@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Search, ShieldCheck, ArrowRight, ExternalLink, Filter } from 'lucide-react';
 import { Entity } from '../types/index.ts';
@@ -34,7 +35,7 @@ export const EntitiesView: React.FC<Props> = ({ onSelectEntity, onInspectTrace, 
   const fetchEntities = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/entities');
+      const res = await auditFetch('/api/entities');
       if (res.ok) {
         const data = await res.json();
         setEntitiesList(data);
@@ -52,7 +53,7 @@ export const EntitiesView: React.FC<Props> = ({ onSelectEntity, onInspectTrace, 
 
     setCreating(true);
     try {
-      const res = await fetch('/api/entities', {
+      const res = await auditFetch('/api/entities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

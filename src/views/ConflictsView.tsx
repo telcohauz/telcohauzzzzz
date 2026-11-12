@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Plus, Search, AlertTriangle, ArrowRight, CheckCircle2, HelpCircle } from 'lucide-react';
 import { ConflictItem } from '../types/index.ts';
@@ -28,7 +29,7 @@ export const ConflictsView: React.FC<Props> = ({ onRefreshStats, onInspectTrace 
   const fetchConflicts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/conflicts');
+      const res = await auditFetch('/api/conflicts');
       if (res.ok) {
         setConflictsList(await res.json());
       }
@@ -44,7 +45,7 @@ export const ConflictsView: React.FC<Props> = ({ onRefreshStats, onInspectTrace 
     if (!subject.trim() || !infoA.trim() || !infoB.trim()) return;
 
     try {
-      const res = await fetch('/api/conflicts', {
+      const res = await auditFetch('/api/conflicts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

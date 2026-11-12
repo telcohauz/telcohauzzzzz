@@ -302,7 +302,7 @@ export function ComparePage() {
                   </td>
                   {displayPlans.map((plan) => (
                     <td key={plan.id} className="p-4 text-slate-300">
-                      {plan.coverageStatus || (plan.category === 'Fibre' ? 'Kondominium & Kediaman Bertingkat' : 'Semak dengan provider')}
+                      {plan.coverageStatus || (plan.category === 'Fibre Internet' ? 'Kondominium & Kediaman Bertingkat' : 'Semak dengan provider')}
                     </td>
                   ))}
                   {displayPlans.length < 4 && <td />}

@@ -17,12 +17,7 @@ interface AuthContextType {
   getAuthHeaders: () => Record<string, string>;
 }
 
-const defaultAuditor = {
-  uid: 'auditor-lead-session',
-  email: 'ashraffrahman3677@gmail.com',
-  displayName: 'Ashraff Rahman',
-  role: 'Principal Auditor & Owner',
-};
+const defaultAuditor = { uid: '', email: '', displayName: 'Belum log masuk', role: 'Tiada akses' };
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
@@ -47,10 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const token = await user.getIdToken();
           setIdToken(token);
         } catch (e) {
-          console.error('Failed to get token:', e);
+          setIdToken(null); console.error('Failed to get token:', e);
         }
       } else {
-        setIdToken('auditor-preview-session-token');
+        setIdToken(null);
       }
       setLoading(false);
     });
@@ -73,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signOut(auth);
       setCurrentUser(null);
-      setIdToken('auditor-preview-session-token');
+      setIdToken(null);
     } catch (err) {
       console.error('Sign out error:', err);
     }
@@ -82,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getAuthHeaders = (): Record<string, string> => {
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${idToken || 'auditor-preview-session-token'}`
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {})
     };
   };
 
@@ -90,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     uid: currentUser.uid,
     email: currentUser.email || 'auditor@telcohauz.internal',
     displayName: currentUser.displayName || 'Authorized Auditor',
-    role: 'Certified Digital Auditor',
+    role: 'Akses perlu disahkan oleh pelayan',
   } : defaultAuditor;
 
   return (

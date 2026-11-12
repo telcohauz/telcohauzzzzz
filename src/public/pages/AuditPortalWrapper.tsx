@@ -1,3 +1,5 @@
+import { useAuth } from '../../context/AuthContext.tsx';
+import { auditFetch } from '../../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Database, Globe } from 'lucide-react';
@@ -24,7 +26,7 @@ import { WorkflowGuideView } from '../../views/WorkflowGuideView.tsx';
 import { DocumentsBrandView } from '../../views/DocumentsBrandView.tsx';
 import { ChangeLogView } from '../../views/ChangeLogView.tsx';
 
-export function AuditPortalWrapper() {
+function AuditWorkspace() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [stats, setStats] = useState<any>(null);
@@ -38,7 +40,7 @@ export function AuditPortalWrapper() {
   const fetchStats = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/stats');
+      const res = await auditFetch('/api/stats');
       if (res.ok) {
         setStats(await res.json());
       }
@@ -98,7 +100,7 @@ export function AuditPortalWrapper() {
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4 text-cyan-400" />
           <span className="font-bold text-cyan-300">PORTAL AUDIT DALAMAN & REKOD ENTITI TELCOHAUZ</span>
-          <span className="hidden sm:inline text-slate-400">(Cloud SQL PostgreSQL Connected)</span>
+          <span className="hidden sm:inline text-slate-400">(Akses dalaman)</span>
         </div>
         <Link
           to="/"
@@ -267,4 +269,28 @@ export function AuditPortalWrapper() {
       />
     </div>
   );
+}
+
+export function AuditPortalWrapper() {
+  const { currentUser, loading, signInWithGoogle, logout } = useAuth();
+  const [access, setAccess] = useState<'checking' | 'allowed' | 'denied'>('checking');
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    let active = true;
+    setAccess('checking');
+    if (!currentUser) return () => { active = false; };
+    auditFetch('/api/auth/me').then(async response => {
+      if (!response.ok) throw new Error('Portal belum tersedia. Cuba semula kemudian.');
+      if (active) setAccess('allowed');
+    }).catch(error => { if (active) { setMessage(error.message); setAccess('denied'); } });
+    return () => { active = false; };
+  }, [currentUser]);
+  if (loading || (currentUser && access === 'checking')) return <main className="p-8">Menyemak akses…</main>;
+  if (!currentUser || access !== 'allowed') return <main className="max-w-xl mx-auto p-8 space-y-5">
+    <h1 className="text-2xl font-bold">Portal Dokumen & Audit BOZ</h1>
+    <p>{currentUser ? message : 'Log masuk menggunakan akaun yang telah diberikan akses oleh pentadbir.'}</p>
+    <button className="rounded bg-cyan-700 text-white px-5 py-3" onClick={() => currentUser ? logout() : signInWithGoogle()}>{currentUser ? 'Tukar akaun' : 'Log masuk dengan Google'}</button>
+    <p><Link to="/">Kembali ke laman awam</Link></p>
+  </main>;
+  return <AuditWorkspace />;
 }
