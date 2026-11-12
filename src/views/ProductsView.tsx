@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Search, Tag, DollarSign, ShieldCheck, ExternalLink } from 'lucide-react';
 import { Product } from '../types/index.ts';
@@ -34,7 +35,7 @@ export const ProductsView: React.FC<Props> = ({ onRefreshStats, onInspectTrace }
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/products');
+      const res = await auditFetch('/api/products');
       if (res.ok) {
         setProductsList(await res.json());
       }
@@ -50,7 +51,7 @@ export const ProductsView: React.FC<Props> = ({ onRefreshStats, onInspectTrace }
     if (!productName.trim()) return;
 
     try {
-      const res = await fetch('/api/products', {
+      const res = await auditFetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

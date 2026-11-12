@@ -5,6 +5,8 @@
  */
 
 export type AnalyticsEventType =
+  | 'whatsapp_click'
+  | 'apply_open'
   | 'page_view'
   | 'product_view'
   | 'promotion_view'

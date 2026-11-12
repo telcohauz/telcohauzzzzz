@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { History, Search, ShieldCheck, Clock, User, ArrowRight } from 'lucide-react';
 import { ChangeLogRecord } from '../types/index.ts';
@@ -14,7 +15,7 @@ export const ChangeLogView: React.FC = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/change-log');
+      const res = await auditFetch('/api/change-log');
       if (res.ok) {
         setLogs(await res.json());
       }

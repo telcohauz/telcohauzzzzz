@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { MessageSquareQuote, Plus, Search, Star, AlertCircle, MessageCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { Review, SentimentType } from '../types/index.ts';
@@ -32,7 +33,7 @@ export const ReviewsReputationView: React.FC<Props> = ({ onRefreshStats, onInspe
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/reviews');
+      const res = await auditFetch('/api/reviews');
       if (res.ok) {
         setReviewsList(await res.json());
       }
@@ -48,7 +49,7 @@ export const ReviewsReputationView: React.FC<Props> = ({ onRefreshStats, onInspe
     if (!reviewText.trim()) return;
 
     try {
-      const res = await fetch('/api/reviews', {
+      const res = await auditFetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

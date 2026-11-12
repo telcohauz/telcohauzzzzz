@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { FileCheck2, Plus, Search, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, FileText, ArrowRight } from 'lucide-react';
 import { Claim, VerificationStatus } from '../types/index.ts';
@@ -37,7 +38,7 @@ export const ClaimsVerificationView: React.FC<Props> = ({ onInspectTrace, onRefr
   const fetchClaims = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/claims');
+      const res = await auditFetch('/api/claims');
       if (res.ok) {
         setClaimsList(await res.json());
       }
@@ -53,7 +54,7 @@ export const ClaimsVerificationView: React.FC<Props> = ({ onInspectTrace, onRefr
     if (!verifyingClaim) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/claims/${verifyingClaim.id}/verify`, {
+      const res = await auditFetch(`/api/claims/${verifyingClaim.id}/verify`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -79,7 +80,7 @@ export const ClaimsVerificationView: React.FC<Props> = ({ onInspectTrace, onRefr
     e.preventDefault();
     if (!newClaimText.trim()) return;
     try {
-      const res = await fetch('/api/claims', {
+      const res = await auditFetch('/api/claims', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

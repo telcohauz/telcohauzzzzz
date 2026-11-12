@@ -343,7 +343,7 @@ export function ProductDetailPage() {
                 8. KAWASAN LIPUTAN (COVERAGE)
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                {plan.coverageStatus || (plan.category === 'Fibre' ? 'Liputan gentian optik tersedia di kondominium, apartmen, dan kawasan perumahan bertingkat serta perumahan terpilih.' : 'Tersedia di kawasan liputan 4G/5G di seluruh Malaysia.')}
+                {plan.coverageStatus || (plan.category === 'Fibre Internet' ? 'Liputan gentian optik tersedia di kondominium, apartmen, dan kawasan perumahan bertingkat serta perumahan terpilih.' : 'Tersedia di kawasan liputan 4G/5G di seluruh Malaysia.')}
               </p>
               <div className="pt-2">
                 <Link

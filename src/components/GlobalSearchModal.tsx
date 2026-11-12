@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, ArrowRight, ShieldCheck, Building2, Package, Globe, Users, FileText, CheckCircle2, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
 import { SearchResultItem } from '../types/index.ts';
@@ -46,7 +47,7 @@ export const GlobalSearchModal: React.FC<Props> = ({ isOpen, onClose, onSelectRe
       }
       setLoading(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
+        const res = await auditFetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
         const data = await res.json();
         setResults(data.results || []);
       } catch (err) {

@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { FolderGit2, FileText, Globe, Plus, Search, ExternalLink, ShieldCheck, Hash, Eye, Download, CheckCircle2 } from 'lucide-react';
 import { Source, Evidence } from '../types/index.ts';
@@ -38,8 +39,8 @@ export const EvidenceSourcesView: React.FC<Props> = ({ onInspectTrace, onRefresh
     setLoading(true);
     try {
       const [eviRes, srcRes] = await Promise.all([
-        fetch('/api/evidence'),
-        fetch('/api/sources'),
+        auditFetch('/api/evidence'),
+        auditFetch('/api/sources'),
       ]);
       if (eviRes.ok && srcRes.ok) {
         setEvidenceList(await eviRes.json());
@@ -56,7 +57,7 @@ export const EvidenceSourcesView: React.FC<Props> = ({ onInspectTrace, onRefresh
     e.preventDefault();
     if (!eviDesc.trim()) return;
     try {
-      const res = await fetch('/api/evidence', {
+      const res = await auditFetch('/api/evidence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,7 +85,7 @@ export const EvidenceSourcesView: React.FC<Props> = ({ onInspectTrace, onRefresh
     e.preventDefault();
     if (!srcName.trim()) return;
     try {
-      const res = await fetch('/api/sources', {
+      const res = await auditFetch('/api/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

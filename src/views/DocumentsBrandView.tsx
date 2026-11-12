@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { FileText, ShieldCheck, Palette, FileCheck2, ExternalLink } from 'lucide-react';
 import { BrandAsset, SOPDocument } from '../types/index.ts';
@@ -16,8 +17,8 @@ export const DocumentsBrandView: React.FC = () => {
     setLoading(true);
     try {
       const [brandRes, sopRes] = await Promise.all([
-        fetch('/api/brand-assets'),
-        fetch('/api/sop'),
+        auditFetch('/api/brand-assets'),
+        auditFetch('/api/sop'),
       ]);
       if (brandRes.ok && sopRes.ok) {
         setBrandAssets(await brandRes.json());

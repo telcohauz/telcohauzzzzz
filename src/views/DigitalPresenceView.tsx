@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { Globe2, Users, ShoppingBag, Plus, Search, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { DomainWebsite, SocialAccount, Marketplace } from '../types/index.ts';
@@ -42,9 +43,9 @@ export const DigitalPresenceView: React.FC<Props> = ({ onRefreshStats, onInspect
     setLoading(true);
     try {
       const [domRes, socRes, mktRes] = await Promise.all([
-        fetch('/api/domains'),
-        fetch('/api/social'),
-        fetch('/api/marketplaces'),
+        auditFetch('/api/domains'),
+        auditFetch('/api/social'),
+        auditFetch('/api/marketplaces'),
       ]);
       if (domRes.ok && socRes.ok && mktRes.ok) {
         setDomainsList(await domRes.json());
@@ -62,7 +63,7 @@ export const DigitalPresenceView: React.FC<Props> = ({ onRefreshStats, onInspect
     e.preventDefault();
     if (!domDomain.trim() || !domUrl.trim()) return;
     try {
-      const res = await fetch('/api/domains', {
+      const res = await auditFetch('/api/domains', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,7 +91,7 @@ export const DigitalPresenceView: React.FC<Props> = ({ onRefreshStats, onInspect
     e.preventDefault();
     if (!socUsername.trim() || !socUrl.trim()) return;
     try {
-      const res = await fetch('/api/social', {
+      const res = await auditFetch('/api/social', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

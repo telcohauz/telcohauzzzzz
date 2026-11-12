@@ -28,8 +28,7 @@ import {
   enquiries
 } from '../db/schema.ts';
 import { eq, desc, ilike, or } from 'drizzle-orm';
-import { optionalAuth, AuthRequest } from '../middleware/auth.ts';
-import { seedDemoData } from '../db/seed.ts';
+import { requireAuditAccess, AuthRequest } from '../middleware/auth.ts';
 import {
   TELCO_PLANS,
   PROMOTIONS,
@@ -70,9 +69,9 @@ apiRouter.get('/public/plans', (req, res) => {
   }
 
   if (sort === 'price-low') {
-    list.sort((a, b) => a.priceMonthly - b.priceMonthly);
+    list.sort((a, b) => (a.priceMonthly ?? Infinity) - (b.priceMonthly ?? Infinity));
   } else if (sort === 'price-high') {
-    list.sort((a, b) => b.priceMonthly - a.priceMonthly);
+    list.sort((a, b) => (b.priceMonthly ?? -Infinity) - (a.priceMonthly ?? -Infinity));
   } else if (sort === 'popular') {
     list.sort((a, b) => (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0));
   }
@@ -214,7 +213,7 @@ apiRouter.post('/public/enquiry', async (req, res) => {
 });
 
 // 8. List Enquiries (for Admin / Audit portal)
-apiRouter.get('/public/enquiries', optionalAuth, async (_req, res) => {
+apiRouter.get('/public/enquiries', requireAuditAccess, async (_req, res) => {
   try {
     const list = await db.select().from(enquiries).orderBy(desc(enquiries.createdAt));
     res.json(list);
@@ -223,34 +222,14 @@ apiRouter.get('/public/enquiries', optionalAuth, async (_req, res) => {
   }
 });
 
-// Automatically seed on initial load if needed
-let seeded = false;
-apiRouter.use(async (_req, _res, next) => {
-  if (!seeded) {
-    try {
-      await seedDemoData();
-      seeded = true;
-    } catch (e) {
-      console.error('Seed check failed:', e);
-    }
-  }
-  next();
-});
-
-// Current Auditor User Profile
-apiRouter.get('/auth/me', optionalAuth, (req: AuthRequest, res) => {
-  res.json({
-    user: req.user || {
-      uid: 'auditor-lead-session',
-      email: 'ashraffrahman3677@gmail.com',
-      name: 'Ashraff Rahman',
-      role: 'Principal Auditor & Owner',
-    }
-  });
+// All remaining routes are internal. No automatic seeding on requests.
+apiRouter.use(requireAuditAccess);
+apiRouter.get('/auth/me', (req: AuthRequest, res) => {
+  res.json({ user: { uid: req.user!.uid, email: req.user!.email, name: req.user!.name, role: req.user!.audit_role } });
 });
 
 // Comprehensive Dashboard Stats
-apiRouter.get('/stats', optionalAuth, async (_req, res) => {
+apiRouter.get('/stats', async (_req, res) => {
   try {
     const allEntities = await db.select().from(entities);
     const allSources = await db.select().from(sources);
@@ -327,7 +306,7 @@ apiRouter.get('/stats', optionalAuth, async (_req, res) => {
 });
 
 // Master Global Index Search
-apiRouter.get('/search', optionalAuth, async (req, res) => {
+apiRouter.get('/search', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (!q) {
     return res.json({ results: [] });
@@ -438,7 +417,7 @@ apiRouter.get('/search', optionalAuth, async (req, res) => {
 });
 
 // Entities API
-apiRouter.get('/entities', optionalAuth, async (_req, res) => {
+apiRouter.get('/entities', async (_req, res) => {
   try {
     const list = await db.select().from(entities).orderBy(entities.id);
     res.json(list);
@@ -448,7 +427,7 @@ apiRouter.get('/entities', optionalAuth, async (_req, res) => {
 });
 
 // Full Deep Entity Profile Page
-apiRouter.get('/entities/:id', optionalAuth, async (req, res) => {
+apiRouter.get('/entities/:id', async (req, res) => {
   try {
     const entityId = parseInt(req.params.id, 10);
     const entList = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1);
@@ -524,7 +503,7 @@ apiRouter.get('/entities/:id', optionalAuth, async (req, res) => {
 });
 
 // Create Entity
-apiRouter.post('/entities', optionalAuth, async (req, res) => {
+apiRouter.post('/entities', async (req, res) => {
   try {
     const { officialName, tradingName, entityType, usernameHandle, description, verificationStatus, confidence, notes } = req.body;
     const count = (await db.select().from(entities)).length + 1;
@@ -561,7 +540,7 @@ apiRouter.post('/entities', optionalAuth, async (req, res) => {
 });
 
 // Sources API
-apiRouter.get('/sources', optionalAuth, async (_req, res) => {
+apiRouter.get('/sources', async (_req, res) => {
   try {
     const list = await db.select().from(sources).orderBy(desc(sources.id));
     res.json(list);
@@ -570,7 +549,7 @@ apiRouter.get('/sources', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/sources', optionalAuth, async (req, res) => {
+apiRouter.post('/sources', async (req, res) => {
   try {
     const { sourceName, url, sourceType, primaryOrSecondary, platform, publicationDate, reliabilityNotes, relatedRecords } = req.body;
     const count = (await db.select().from(sources)).length + 1;
@@ -596,7 +575,7 @@ apiRouter.post('/sources', optionalAuth, async (req, res) => {
 });
 
 // Evidence API
-apiRouter.get('/evidence', optionalAuth, async (_req, res) => {
+apiRouter.get('/evidence', async (_req, res) => {
   try {
     const list = await db.select().from(evidence).orderBy(desc(evidence.id));
     res.json(list);
@@ -605,7 +584,7 @@ apiRouter.get('/evidence', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/evidence', optionalAuth, async (req, res) => {
+apiRouter.post('/evidence', async (req, res) => {
   try {
     const { evidenceType, description, filePathOrUrl, screenshotUrl, url, sourceId, entityId, notes, hashRef } = req.body;
     const count = (await db.select().from(evidence)).length + 1;
@@ -633,7 +612,7 @@ apiRouter.post('/evidence', optionalAuth, async (req, res) => {
 });
 
 // Claims API & Verification Workflow
-apiRouter.get('/claims', optionalAuth, async (_req, res) => {
+apiRouter.get('/claims', async (_req, res) => {
   try {
     const list = await db.select().from(claims).orderBy(desc(claims.id));
     res.json(list);
@@ -642,7 +621,7 @@ apiRouter.get('/claims', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/claims', optionalAuth, async (req, res) => {
+apiRouter.post('/claims', async (req, res) => {
   try {
     const { claimText, claimType, entityId, sourceId, supportingEvidence, contradictingEvidence, verificationStatus, confidence, auditorNotes } = req.body;
     const count = (await db.select().from(claims)).length + 1;
@@ -669,7 +648,7 @@ apiRouter.post('/claims', optionalAuth, async (req, res) => {
   }
 });
 
-apiRouter.put('/claims/:id/verify', optionalAuth, async (req, res) => {
+apiRouter.put('/claims/:id/verify', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { verificationStatus, verificationMethod, notes } = req.body;
@@ -713,7 +692,7 @@ apiRouter.put('/claims/:id/verify', optionalAuth, async (req, res) => {
 });
 
 // Conflicts API
-apiRouter.get('/conflicts', optionalAuth, async (_req, res) => {
+apiRouter.get('/conflicts', async (_req, res) => {
   try {
     const list = await db.select().from(conflicts).orderBy(desc(conflicts.id));
     res.json(list);
@@ -722,7 +701,7 @@ apiRouter.get('/conflicts', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/conflicts', optionalAuth, async (req, res) => {
+apiRouter.post('/conflicts', async (req, res) => {
   try {
     const { subject, informationA, sourceAId, informationB, sourceBId, conflictType, currentStatus, requiredVerification, entityId, notes } = req.body;
     const count = (await db.select().from(conflicts)).length + 1;
@@ -749,7 +728,7 @@ apiRouter.post('/conflicts', optionalAuth, async (req, res) => {
 });
 
 // Relationships API
-apiRouter.get('/relationships', optionalAuth, async (_req, res) => {
+apiRouter.get('/relationships', async (_req, res) => {
   try {
     const list = await db.select().from(relationships).orderBy(desc(relationships.id));
     res.json(list);
@@ -758,7 +737,7 @@ apiRouter.get('/relationships', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/relationships', optionalAuth, async (req, res) => {
+apiRouter.post('/relationships', async (req, res) => {
   try {
     const { entityAId, entityBId, relationshipType, description, sourceId, evidenceId, verificationStatus, confidence, notes } = req.body;
     const count = (await db.select().from(relationships)).length + 1;
@@ -784,7 +763,7 @@ apiRouter.post('/relationships', optionalAuth, async (req, res) => {
 });
 
 // Products API
-apiRouter.get('/products', optionalAuth, async (_req, res) => {
+apiRouter.get('/products', async (_req, res) => {
   try {
     const list = await db.select().from(products).orderBy(desc(products.id));
     res.json(list);
@@ -793,7 +772,7 @@ apiRouter.get('/products', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/products', optionalAuth, async (req, res) => {
+apiRouter.post('/products', async (req, res) => {
   try {
     const { productName, brand, model, category, sku, price, currency, stockStatus, description, platform, entityId, notes } = req.body;
     const count = (await db.select().from(products)).length + 1;
@@ -826,7 +805,7 @@ apiRouter.post('/products', optionalAuth, async (req, res) => {
 });
 
 // Domains & Websites API
-apiRouter.get('/domains', optionalAuth, async (_req, res) => {
+apiRouter.get('/domains', async (_req, res) => {
   try {
     const list = await db.select().from(domainsWebsites).orderBy(desc(domainsWebsites.id));
     res.json(list);
@@ -835,7 +814,7 @@ apiRouter.get('/domains', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/domains', optionalAuth, async (req, res) => {
+apiRouter.post('/domains', async (req, res) => {
   try {
     const { domain, subdomain, url, type, status, entityId, websiteDescription, about, contact, notes } = req.body;
     const item = await db.insert(domainsWebsites).values({
@@ -860,7 +839,7 @@ apiRouter.post('/domains', optionalAuth, async (req, res) => {
 });
 
 // Social Accounts API
-apiRouter.get('/social', optionalAuth, async (_req, res) => {
+apiRouter.get('/social', async (_req, res) => {
   try {
     const list = await db.select().from(socialAccounts).orderBy(desc(socialAccounts.id));
     res.json(list);
@@ -869,7 +848,7 @@ apiRouter.get('/social', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/social', optionalAuth, async (req, res) => {
+apiRouter.post('/social', async (req, res) => {
   try {
     const { platform, username, displayName, url, accountType, entityId, followers, contentDescription, notes } = req.body;
     const item = await db.insert(socialAccounts).values({
@@ -894,7 +873,7 @@ apiRouter.post('/social', optionalAuth, async (req, res) => {
 });
 
 // Marketplaces API
-apiRouter.get('/marketplaces', optionalAuth, async (_req, res) => {
+apiRouter.get('/marketplaces', async (_req, res) => {
   try {
     const list = await db.select().from(marketplaces).orderBy(desc(marketplaces.id));
     res.json(list);
@@ -904,7 +883,7 @@ apiRouter.get('/marketplaces', optionalAuth, async (_req, res) => {
 });
 
 // Reviews API
-apiRouter.get('/reviews', optionalAuth, async (_req, res) => {
+apiRouter.get('/reviews', async (_req, res) => {
   try {
     const list = await db.select().from(reviews).orderBy(desc(reviews.id));
     res.json(list);
@@ -913,7 +892,7 @@ apiRouter.get('/reviews', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/reviews', optionalAuth, async (req, res) => {
+apiRouter.post('/reviews', async (req, res) => {
   try {
     const { platform, reviewerIdentifier, rating, date, reviewText, sentiment, issue, telcohauzResponse, entityId } = req.body;
     const item = await db.insert(reviews).values({
@@ -936,7 +915,7 @@ apiRouter.post('/reviews', optionalAuth, async (req, res) => {
 });
 
 // Timeline API
-apiRouter.get('/timeline', optionalAuth, async (req, res) => {
+apiRouter.get('/timeline', async (req, res) => {
   try {
     const category = req.query.category as string;
     const year = req.query.year as string;
@@ -960,7 +939,7 @@ apiRouter.get('/timeline', optionalAuth, async (req, res) => {
   }
 });
 
-apiRouter.post('/timeline', optionalAuth, async (req, res) => {
+apiRouter.post('/timeline', async (req, res) => {
   try {
     const { date, event, category, description, entityId, sourceId, evidenceId, confidence } = req.body;
     const item = await db.insert(timeline).values({
@@ -981,7 +960,7 @@ apiRouter.post('/timeline', optionalAuth, async (req, res) => {
 });
 
 // Audit Tasks API
-apiRouter.get('/tasks', optionalAuth, async (_req, res) => {
+apiRouter.get('/tasks', async (_req, res) => {
   try {
     const list = await db.select().from(auditTasks).orderBy(desc(auditTasks.id));
     res.json(list);
@@ -990,7 +969,7 @@ apiRouter.get('/tasks', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/tasks', optionalAuth, async (req, res) => {
+apiRouter.post('/tasks', async (req, res) => {
   try {
     const { task, category, priority, assignedTo, dueDate, entityId, notes } = req.body;
     const item = await db.insert(auditTasks).values({
@@ -1011,7 +990,7 @@ apiRouter.post('/tasks', optionalAuth, async (req, res) => {
   }
 });
 
-apiRouter.put('/tasks/:id', optionalAuth, async (req, res) => {
+apiRouter.put('/tasks/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { status, result, notes } = req.body;
@@ -1028,7 +1007,7 @@ apiRouter.put('/tasks/:id', optionalAuth, async (req, res) => {
 });
 
 // Duplicates & False Positives API
-apiRouter.get('/duplicates', optionalAuth, async (_req, res) => {
+apiRouter.get('/duplicates', async (_req, res) => {
   try {
     const list = await db.select().from(duplicatesControl).orderBy(desc(duplicatesControl.id));
     res.json(list);
@@ -1037,7 +1016,7 @@ apiRouter.get('/duplicates', optionalAuth, async (_req, res) => {
   }
 });
 
-apiRouter.post('/duplicates', optionalAuth, async (req, res) => {
+apiRouter.post('/duplicates', async (req, res) => {
   try {
     const { recordTable, recordId, possibleDuplicateId, matchReason, decision, notes } = req.body;
     const item = await db.insert(duplicatesControl).values({
@@ -1058,7 +1037,7 @@ apiRouter.post('/duplicates', optionalAuth, async (req, res) => {
 });
 
 // Brand Assets API
-apiRouter.get('/brand-assets', optionalAuth, async (_req, res) => {
+apiRouter.get('/brand-assets', async (_req, res) => {
   try {
     const list = await db.select().from(brandAssets).orderBy(desc(brandAssets.id));
     res.json(list);
@@ -1068,7 +1047,7 @@ apiRouter.get('/brand-assets', optionalAuth, async (_req, res) => {
 });
 
 // SOP & Work Documents API
-apiRouter.get('/sop', optionalAuth, async (_req, res) => {
+apiRouter.get('/sop', async (_req, res) => {
   try {
     const list = await db.select().from(sopWorkDocuments).orderBy(desc(sopWorkDocuments.id));
     res.json(list);
@@ -1078,7 +1057,7 @@ apiRouter.get('/sop', optionalAuth, async (_req, res) => {
 });
 
 // Change Log API
-apiRouter.get('/change-log', optionalAuth, async (_req, res) => {
+apiRouter.get('/change-log', async (_req, res) => {
   try {
     const list = await db.select().from(changeLog).orderBy(desc(changeLog.changedAt)).limit(50);
     res.json(list);

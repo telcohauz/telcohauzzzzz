@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { CopyX, Plus, Search, ShieldCheck, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import { DuplicateRecord, DuplicateDecision } from '../types/index.ts';
@@ -29,7 +30,7 @@ export const DuplicatesControlView: React.FC<Props> = ({ onRefreshStats, onInspe
   const fetchDuplicates = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/duplicates');
+      const res = await auditFetch('/api/duplicates');
       if (res.ok) {
         setDuplicatesList(await res.json());
       }
@@ -45,7 +46,7 @@ export const DuplicatesControlView: React.FC<Props> = ({ onRefreshStats, onInspe
     if (!recordId.trim() || !possibleDuplicateId.trim()) return;
 
     try {
-      const res = await fetch('/api/duplicates', {
+      const res = await auditFetch('/api/duplicates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

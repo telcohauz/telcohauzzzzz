@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { GitFork, Plus, Search, ShieldCheck, ArrowRight, Share2 } from 'lucide-react';
 import { Relationship, Entity } from '../types/index.ts';
@@ -31,8 +32,8 @@ export const RelationshipsView: React.FC<Props> = ({ onInspectTrace, onRefreshSt
     setLoading(true);
     try {
       const [relRes, entRes] = await Promise.all([
-        fetch('/api/relationships'),
-        fetch('/api/entities'),
+        auditFetch('/api/relationships'),
+        auditFetch('/api/entities'),
       ]);
       if (relRes.ok && entRes.ok) {
         setRelationshipsList(await relRes.json());
@@ -50,7 +51,7 @@ export const RelationshipsView: React.FC<Props> = ({ onInspectTrace, onRefreshSt
     if (!entityAId || !entityBId) return;
 
     try {
-      const res = await fetch('/api/relationships', {
+      const res = await auditFetch('/api/relationships', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

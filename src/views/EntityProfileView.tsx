@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
@@ -46,7 +47,7 @@ export const EntityProfileView: React.FC<Props> = ({ entityId, onBack, onInspect
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/entities/${entityId}`);
+      const res = await auditFetch(`/api/entities/${entityId}`);
       if (res.ok) {
         const data = await res.json();
         setProfile(data);

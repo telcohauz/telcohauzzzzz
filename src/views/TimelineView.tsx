@@ -1,3 +1,4 @@
+import { auditFetch } from '../lib/audit-fetch.ts';
 import React, { useState, useEffect } from 'react';
 import { Clock, Plus, Search, Filter, ShieldCheck, Calendar, ArrowRight, ExternalLink } from 'lucide-react';
 import { TimelineItem } from '../types/index.ts';
@@ -35,7 +36,7 @@ export const TimelineView: React.FC<Props> = ({ onRefreshStats, onInspectTrace }
       if (yearFilter !== 'ALL') params.append('year', yearFilter);
       if (params.toString()) url += `?${params.toString()}`;
 
-      const res = await fetch(url);
+      const res = await auditFetch(url);
       if (res.ok) {
         setTimelineList(await res.json());
       }
@@ -51,7 +52,7 @@ export const TimelineView: React.FC<Props> = ({ onRefreshStats, onInspectTrace }
     if (!eventName.trim() || !eventDate.trim()) return;
 
     try {
-      const res = await fetch('/api/timeline', {
+      const res = await auditFetch('/api/timeline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
