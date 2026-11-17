@@ -1,0 +1,16 @@
+name: Affiliate Autopilot approved maintenance
+# Intentionally manual until durable storage, quota and hosting are verified.
+# Candidate UTC cron: 17 */6 * * * (Malaysia 02:17/08:17/14:17/20:17).
+# Do NOT use ephemeral GitHub runners as the production SQLite database.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: |
+          echo 'BLOCKED: configure approved durable storage and verify free quotas before activating recurring operations.'
+          exit 1

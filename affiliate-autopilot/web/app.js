@@ -1,0 +1,18 @@
+let token='';
+const $=id=>document.getElementById(id);
+const message=text=>{$('message').textContent=text;};
+function el(tag,text){const e=document.createElement(tag);e.textContent=text;return e;}
+async function api(path,data){const r=await fetch('/api/'+path,{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})});const body=await r.json();if(!r.ok)throw Error(body.error);return body;}
+function items(id,rows,build){$(id).replaceChildren();if(!rows.length)$(id).append(el('p','No records / Tiada rekod'));rows.forEach(r=>{const box=el('div','');box.className='item';build(box,r);$(id).append(box);});}
+function button(box,label,callback){const b=el('button',label);b.onclick=async()=>{b.disabled=true;try{await callback();await refresh();message('Action recorded.');}catch(e){message(e.message);}finally{b.disabled=false;}};box.append(b);}
+async function refresh(){try{const d=await api('status');$('state').textContent=d.paused?'PAUSED':'ENABLED · ASSISTED';$('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-MY',{timeZone:d.timezone})+' MYT · '+d.deployment;$('cards').replaceChildren();for(const [label,value] of [['Approved commissions',d.financial.approved_commissions],['Pending commissions',d.financial.pending_commissions],['Actual payouts',d.financial.actual_payouts],['Net realized income',d.financial.net_realized_income]]){const c=el('div',label);c.className='card';c.append(el('strong',d.financial.data_status==='NO_SOURCE_DATA'?'No source data':'RM '+(value/100).toFixed(2)));$('cards').append(c);}
+items('platforms',d.affiliate_platforms,(b,r)=>{b.append(el('strong',r.name),el('p',r.enabled?'Enabled; eligibility evidence required':'REQUIRES CONNECTION · Disabled'));});
+items('products',d.affiliate_products,(b,r)=>{b.append(el('strong',r.name),el('p',`${r.compliance} · RM ${(r.price_sen/100).toFixed(2)} · source ${r.source_at}`));for(const language of ['ms','en'])button(b,'Draft '+language,()=>api('draft',{product_id:r.id,language}));});
+items('queue',d.publishing_queue,(b,r)=>{b.append(el('strong',r.state+' · '+r.id),el('p',r.manual_status||'Owner review required'));const next={DRAFT:'VALIDATED',VALIDATED:'APPROVED'}[r.state];if(next)button(b,next,()=>api('transition',{queue_id:r.id,target:next}));if(r.state==='APPROVED'){const l=el('label','Schedule date (Malaysia time)');const i=document.createElement('input');i.type='datetime-local';i.id='schedule-'+r.id;l.htmlFor=i.id;b.append(l,i);button(b,'Schedule manual upload',()=>{if(!i.value)throw Error('Choose schedule time');return api('transition',{queue_id:r.id,target:'SCHEDULED',scheduled_at:i.value+':00+08:00'});});}});
+items('jobs',d.automation_jobs,(b,r)=>{b.append(el('strong',r.kind+' · '+r.status),el('p',`Retries ${r.retry_count}/${r.max_retries} · ${r.error_code||'No error'}`));if(r.status==='FAILED')button(b,'Retry',()=>api('retry',{job_id:r.id}));});
+items('notifications',d.notifications,(b,r)=>b.append(el('strong',r.kind),el('p',r.message+' · '+r.created_at)));
+$('finance').textContent=JSON.stringify(d.financial,null,2);message('Connected.');}catch(e){message(e.message);}}
+$('login').onsubmit=e=>{e.preventDefault();token=$('token').value;$('token').value='';refresh();};
+$('product').onsubmit=async e=>{e.preventDefault();try{await api('product',JSON.parse($('product-json').value));await refresh();}catch(e){message(e.message);}};
+$('refresh').onclick=refresh;
+document.querySelectorAll('[data-control]').forEach(b=>b.onclick=async()=>{try{await api('control',{action:b.dataset.control});await refresh();}catch(e){message(e.message);}});

@@ -1,0 +1,1 @@
+PASS: real Chromium, owner login, pause/resume, honest empty metrics, mobile overflow, no browser JS errors.
